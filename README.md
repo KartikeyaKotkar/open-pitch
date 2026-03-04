@@ -41,17 +41,17 @@ open-pitch/
 
 1. Clone the repository:
 
+
+``` 
+git clone https://github.com/KartikeyaKotkar/open-pitch.git
 ```
 
-git clone [https://github.com/KartikeyaKotkar/open-pitch.git](https://github.com/KartikeyaKotkar/open-pitch.git)
-
-```
 
 2. Open Chrome and go to:
 
-
+```
 chrome://extensions
-
+```
 
 3. Turn on Developer Mode (top right).
 
