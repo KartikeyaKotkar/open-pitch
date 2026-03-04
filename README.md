@@ -28,10 +28,15 @@ Right now the extension:
 
 open-pitch/
 │
+├── content.js
 ├── manifest.json
+├── package-lock.json
+├── package.json
 ├── popup.html
 ├── popup.js
-└── content.js
+├── README.md
+└── sountouch-web-audio.js
+
 
 ```
 
