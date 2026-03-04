@@ -2,24 +2,29 @@
     "manifest_version": 3,
     "name": "OpenPitch",
     "version": "1.0",
-    "description": "Free and Open Source Pitch Changer for YouTube",
+    "description": "Change the pitch of YouTube videos. Free, open source, no limits.",
     "permissions": [
-        "activeTab"
+        "activeTab",
+        "scripting",
+        "storage"
     ],
     "host_permissions": [
-        "*://*.youtube.com/*"
+        "https://www.youtube.com/*"
     ],
     "action": {
-        "default_popup": "popup.html"
+        "default_popup": "popup.html",
+        "default_title": "OpenPitch"
     },
     "content_scripts": [
         {
             "matches": [
-                "*://*.youtube.com/*"
+                "https://www.youtube.com/*"
             ],
             "js": [
+                "soundtouch-web-audio.js",
                 "content.js"
-            ]
+            ],
+            "run_at": "document_idle"
         }
     ]
 }
