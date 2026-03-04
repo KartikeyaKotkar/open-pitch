@@ -43,7 +43,7 @@ open-pitch/
 
 ```
 
-git clone [https://github.com/yourusername/open-pitch.git](https://github.com/yourusername/open-pitch.git)
+git clone [https://github.com/KartikeyaKotkar/open-pitch.git](https://github.com/KartikeyaKotkar/open-pitch.git)
 
 ```
 
