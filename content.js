@@ -21,6 +21,11 @@ let soundtouch = null;
 let currentSemitones = 0;
 let currentBlockSize = 4096;
 
+const handleVideoEnded = () => {
+    console.log('[OpenPitch] Video ended, tearing down.');
+    teardown();
+};
+
 // We accumulate input samples in a ring-buffer that SoundTouch reads from.
 let inputL = null;
 let inputR = null;
@@ -47,6 +52,10 @@ function init(semitones) {
 // ─── Build audio graph ────────────────────────────────────────────────────────
 
 function buildChain(video) {
+    if (currentVideo === video && audioCtx && audioCtx.state !== 'closed') {
+        return;
+    }
+
     currentVideo = video;
 
     try {
@@ -68,6 +77,9 @@ function buildChain(video) {
 
     // Start with direct connection so audio always plays
     sourceNode.connect(audioCtx.destination);
+
+    // Auto-teardown when video ends to ensure fresh context for next video
+    video.addEventListener('ended', handleVideoEnded);
 
     // Resume AudioContext — Chrome requires a user gesture
     const resume = () => audioCtx?.resume();
@@ -209,6 +221,7 @@ function cleanupProcessor() {
 // ─── Teardown ─────────────────────────────────────────────────────────────────
 
 function teardown() {
+    try { currentVideo?.removeEventListener('ended', handleVideoEnded); } catch { }
     try { sourceNode?.disconnect(); } catch { }
     cleanupProcessor();
     try { audioCtx?.close(); } catch { }
@@ -251,7 +264,11 @@ chrome.storage.local.get(['pitch', 'blockSize'], ({ pitch, blockSize }) => {
 // ─── YouTube SPA navigation ───────────────────────────────────────────────────
 
 document.addEventListener('yt-navigate-finish', () => {
-    teardown();
+    const video = document.querySelector('video');
+    if (video && video !== currentVideo) {
+        teardown();
+    }
+
     chrome.storage.local.get(['pitch', 'blockSize'], ({ pitch, blockSize }) => {
         const val = (typeof pitch === 'number') ? pitch : 0;
         if (typeof blockSize === 'number') currentBlockSize = blockSize;
