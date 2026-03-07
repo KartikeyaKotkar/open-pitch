@@ -131,6 +131,69 @@
         <option value="8192">8192</option>
     </select>
 
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <span
+            style="font-size: 11px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Smart
+            Processing</span>
+        <label class="switch">
+            <input type="checkbox" id="smartProcessing">
+            <span class="slider-round"></span>
+        </label>
+    </div>
+
+    <style>
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #aaa;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider-round {
+            background-color: #ff4e4e;
+        }
+
+        input:checked+.slider-round:before {
+            transform: translateX(14px);
+            background-color: #fff;
+        }
+
+        select:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    </style>
+
     <button id="reset">Reset to 0</button>
 
     <script src="popup.js"></script>
