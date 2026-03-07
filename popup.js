@@ -1,18 +1,23 @@
 const slider = document.getElementById('pitch');
 const sliderCents = document.getElementById('pitchCents');
 const selectBlockSize = document.getElementById('blockSize');
+const smartToggle = document.getElementById('smartProcessing');
 const display = document.getElementById('display');
 const resetBtn = document.getElementById('reset');
 
 // Load saved values
-chrome.storage.local.get(['pitch', 'pitchCents', 'blockSize'], ({ pitch, pitchCents, blockSize }) => {
+chrome.storage.local.get(['pitch', 'pitchCents', 'blockSize', 'smartProcessing'], ({ pitch, pitchCents, blockSize, smartProcessing }) => {
     const val = pitch ?? 0;
     const cents = pitchCents ?? 0;
     const bs = blockSize ?? 4096;
+    const smart = smartProcessing ?? false;
 
     slider.value = val;
     sliderCents.value = cents;
     selectBlockSize.value = bs;
+    smartToggle.checked = smart;
+
+    selectBlockSize.disabled = smart;
     updateDisplay(val, cents);
 });
 
@@ -35,6 +40,23 @@ selectBlockSize.addEventListener('change', () => {
     sendBlockSize(bs);
 });
 
+smartToggle.addEventListener('change', () => {
+    const smart = smartToggle.checked;
+    chrome.storage.local.set({ smartProcessing: smart });
+    selectBlockSize.disabled = smart;
+
+    if (smart) {
+        // Compute and send auto block size immediately
+        const st = parseFloat(slider.value);
+        const cents = parseFloat(sliderCents.value);
+        const autoBS = getAutoBlockSize(st + (cents / 100));
+        sendBlockSize(autoBS);
+    } else {
+        // Restore manual block size
+        sendBlockSize(parseInt(selectBlockSize.value));
+    }
+});
+
 function handleInput() {
     const st = parseFloat(slider.value);
     const cents = parseFloat(sliderCents.value);
@@ -43,6 +65,19 @@ function handleInput() {
     display.textContent = formatVal(total);
     sendPitch(total);
     chrome.storage.local.set({ pitch: st, pitchCents: cents });
+
+    if (smartToggle.checked) {
+        const autoBS = getAutoBlockSize(total);
+        sendBlockSize(autoBS);
+    }
+}
+
+function getAutoBlockSize(totalSemitones) {
+    const absST = Math.abs(totalSemitones);
+    if (absST <= 3) return 4096;
+    if (absST <= 6) return 2048;
+    if (absST <= 9) return 1024;
+    return 512;
 }
 
 resetBtn.addEventListener('click', () => {
@@ -51,6 +86,10 @@ resetBtn.addEventListener('click', () => {
     display.textContent = '0';
     sendPitch(0);
     chrome.storage.local.set({ pitch: 0, pitchCents: 0 });
+
+    if (smartToggle.checked) {
+        sendBlockSize(4096); // Auto size for 0st
+    }
 });
 
 function formatVal(v) {
