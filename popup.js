@@ -1,14 +1,18 @@
 const slider = document.getElementById('pitch');
 const sliderCents = document.getElementById('pitchCents');
+const selectBlockSize = document.getElementById('blockSize');
 const display = document.getElementById('display');
 const resetBtn = document.getElementById('reset');
 
 // Load saved values
-chrome.storage.local.get(['pitch', 'pitchCents'], ({ pitch, pitchCents }) => {
+chrome.storage.local.get(['pitch', 'pitchCents', 'blockSize'], ({ pitch, pitchCents, blockSize }) => {
     const val = pitch ?? 0;
     const cents = pitchCents ?? 0;
+    const bs = blockSize ?? 4096;
+
     slider.value = val;
     sliderCents.value = cents;
+    selectBlockSize.value = bs;
     updateDisplay(val, cents);
 });
 
@@ -25,11 +29,17 @@ sliderCents.addEventListener('input', () => {
     handleInput();
 });
 
+selectBlockSize.addEventListener('change', () => {
+    const bs = parseInt(selectBlockSize.value);
+    chrome.storage.local.set({ blockSize: bs });
+    sendBlockSize(bs);
+});
+
 function handleInput() {
     const st = parseFloat(slider.value);
     const cents = parseFloat(sliderCents.value);
     const total = st + (cents / 100);
-    
+
     display.textContent = formatVal(total);
     sendPitch(total);
     chrome.storage.local.set({ pitch: st, pitchCents: cents });
@@ -53,5 +63,12 @@ function sendPitch(semitones) {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
         if (!tab) return;
         chrome.tabs.sendMessage(tab.id, { type: 'SET_PITCH', semitones });
+    });
+}
+
+function sendBlockSize(blockSize) {
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (!tab) return;
+        chrome.tabs.sendMessage(tab.id, { type: 'SET_BLOCK_SIZE', blockSize });
     });
 }
