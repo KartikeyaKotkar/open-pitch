@@ -19,6 +19,7 @@ let scriptProcessor = null;
 let currentVideo = null;
 let soundtouch = null;
 let currentSemitones = 0;
+let currentBlockSize = 4096;
 
 // We accumulate input samples in a ring-buffer that SoundTouch reads from.
 let inputL = null;
@@ -122,8 +123,6 @@ function applyPitch(semitones) {
 // ─── SoundTouch ScriptProcessor setup ─────────────────────────────────────────
 
 function setupSoundTouchProcessor(semitones) {
-    const BUFFER_SIZE = 4096;
-
     // Create or reconfigure SoundTouch instance
     soundtouch = new SoundTouch();
     soundtouch.pitchSemitones = semitones;
@@ -134,16 +133,10 @@ function setupSoundTouchProcessor(semitones) {
     inputWritePos = 0;
     inputReadPos = 0;
 
-    // Create a ScriptProcessorNode to capture audio from the source
-    // and output pitch-shifted audio.
-    // We use a splitter to get individual channels from the source,
-    // feed them into the ring buffer via an intermediate ScriptProcessor,
-    // then a second processor reads from SoundTouch output.
-
     // Simpler approach: use a single ScriptProcessor that sits between
     // source and destination. Input samples go into SoundTouch, output
     // comes from SoundTouch.
-    scriptProcessor = audioCtx.createScriptProcessor(BUFFER_SIZE, 2, 2);
+    scriptProcessor = audioCtx.createScriptProcessor(currentBlockSize, 2, 2);
 
     scriptProcessor.onaudioprocess = function (event) {
         const inputBuffer = event.inputBuffer;
@@ -229,13 +222,21 @@ function teardown() {
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'SET_PITCH') {
         init(msg.semitones);
+    } else if (msg.type === 'SET_BLOCK_SIZE') {
+        currentBlockSize = msg.blockSize;
+        // Rebuild chain if already active
+        if (currentSemitones !== 0) {
+            applyPitch(currentSemitones);
+        }
     }
 });
 
-// ─── Restore saved pitch on page load ─────────────────────────────────────────
+// ─── Restore saved pitch and block size on page load ─────────────────────────
 
-chrome.storage.local.get('pitch', ({ pitch }) => {
+chrome.storage.local.get(['pitch', 'blockSize'], ({ pitch, blockSize }) => {
     const val = (typeof pitch === 'number') ? pitch : 0;
+    if (typeof blockSize === 'number') currentBlockSize = blockSize;
+
     if (val !== 0) {
         const observer = new MutationObserver(() => {
             if (document.querySelector('video')) {
@@ -251,8 +252,9 @@ chrome.storage.local.get('pitch', ({ pitch }) => {
 
 document.addEventListener('yt-navigate-finish', () => {
     teardown();
-    chrome.storage.local.get('pitch', ({ pitch }) => {
+    chrome.storage.local.get(['pitch', 'blockSize'], ({ pitch, blockSize }) => {
         const val = (typeof pitch === 'number') ? pitch : 0;
+        if (typeof blockSize === 'number') currentBlockSize = blockSize;
         if (val !== 0) init(val);
     });
 });
