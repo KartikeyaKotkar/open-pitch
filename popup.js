@@ -100,15 +100,23 @@ function formatVal(v) {
 
 function sendPitch(semitones) {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-        if (!tab) return;
-        chrome.tabs.sendMessage(tab.id, { type: 'SET_PITCH', semitones });
+        if (!tab || !tab.url || !tab.url.includes('youtube.com')) return;
+        try {
+            chrome.tabs.sendMessage(tab.id, { type: 'SET_PITCH', semitones });
+        } catch (e) {
+            // Silently ignore if content script not ready
+        }
     });
 }
 
 function sendBlockSize(blockSize) {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-        if (!tab) return;
-        chrome.tabs.sendMessage(tab.id, { type: 'SET_BLOCK_SIZE', blockSize });
+        if (!tab || !tab.url || !tab.url.includes('youtube.com')) return;
+        try {
+            chrome.tabs.sendMessage(tab.id, { type: 'SET_BLOCK_SIZE', blockSize });
+        } catch (e) {
+            // Silently ignore
+        }
     });
 }
 
