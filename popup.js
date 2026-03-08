@@ -111,3 +111,29 @@ function sendBlockSize(blockSize) {
         chrome.tabs.sendMessage(tab.id, { type: 'SET_BLOCK_SIZE', blockSize });
     });
 }
+
+// Keep UI in sync with storage changes (e.g. resets from content.js)
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+
+    if (changes.pitch) {
+        slider.value = changes.pitch.newValue;
+    }
+    if (changes.pitchCents) {
+        sliderCents.value = changes.pitchCents.newValue;
+    }
+    if (changes.blockSize) {
+        selectBlockSize.value = changes.blockSize.newValue;
+    }
+    if (changes.smartProcessing) {
+        smartToggle.checked = changes.smartProcessing.newValue;
+        selectBlockSize.disabled = changes.smartProcessing.newValue;
+    }
+
+    // Update the visual display if pitch or cents changed
+    if (changes.pitch || changes.pitchCents) {
+        const val = slider.value;
+        const cents = sliderCents.value;
+        updateDisplay(val, cents);
+    }
+});
