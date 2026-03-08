@@ -22,7 +22,8 @@ let currentSemitones = 0;
 let currentBlockSize = 4096;
 
 const handleVideoEnded = () => {
-    console.log('[OpenPitch] Video ended, tearing down.');
+    console.log('[OpenPitch] Video ended, resetting and tearing down.');
+    chrome.storage.local.set({ pitch: 0, pitchCents: 0, blockSize: 4096, smartProcessing: false });
     teardown();
 };
 
@@ -267,6 +268,7 @@ document.addEventListener('yt-navigate-finish', () => {
     const video = document.querySelector('video');
     if (video && video !== currentVideo) {
         teardown();
+        chrome.storage.local.set({ pitch: 0, pitchCents: 0, blockSize: 4096, smartProcessing: false });
     }
 
     chrome.storage.local.get(['pitch', 'blockSize'], ({ pitch, blockSize }) => {
