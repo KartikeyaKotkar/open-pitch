@@ -1,6 +1,11 @@
+<div align="center">
+  <h1>🎹 OpenPitch</h1>
+  <p><b>Real-time, high-quality pitch shifting for YouTube.</b></p>
+  <br />
+  <img src="assets/openpitch_extension.PNG" width="320" alt="OpenPitch Extension" />
+</div>
 
-
-# OpenPitch
+<br />
 
 OpenPitch is a simple Chrome extension that lets you change the pitch of YouTube videos.
 
@@ -28,15 +33,16 @@ Right now the extension:
 
 open-pitch/
 │
-├── content.js
-├── manifest.json
-├── package-lock.json
-├── package.json
-├── popup.html
-├── popup.js
-├── README.md
-├── CONTRIBUTING.md
-└── soundtouch-web-audio.js
+├── assets/                     # Extension screenshots and icons
+│   └── openpitch_extension.PNG
+├── content.js                  # Audio processing engine
+├── manifest.json               # Extension configuration
+├── package.json                # Metadata (no build step)
+├── popup.html                  # Popup UI
+├── popup.js                    # UI logic and messaging
+├── README.md                   # Project documentation
+├── CONTRIBUTING.md             # Developer guidelines
+└── soundtouch-web-audio.js     # SoundTouch DSP library
 
 ```
 
