@@ -35,8 +35,8 @@ open-pitch/
 ├── popup.html
 ├── popup.js
 ├── README.md
-└── sountouch-web-audio.js
-
+├── CONTRIBUTING.md
+└── soundtouch-web-audio.js
 
 ```
 
@@ -72,8 +72,6 @@ chrome://extensions
 
 The popup sends the selected semitone value to the content script.
 
-The popup sends the selected semitone value to the content script.
-
 The content script uses the **Web Audio API** and **SoundTouch.js** to process the video's audio track in real time.
 
 It captures the audio stream from the `<video>` element, pipes it through a pitch-shifter node, and outputs the result to the speakers. This allows for independent control over pitch (-12 to +12 semitones) while keeping the playback speed constant.
@@ -83,8 +81,8 @@ It captures the audio stream from the `<video>` element, pipes it through a pitc
 ## Roadmap
 
 - [Done] Replace playbackRate with real pitch shifting
-- Fine-tune audio buffering for higher quality
-- Save last pitch value
+- [Done] Fine-tune audio buffering for higher quality (Configurable Block Size & Smart Processing)
+- [Done] Save last pitch value
 - Add key presets
 - Possibly support more platforms
 
@@ -92,7 +90,9 @@ It captures the audio stream from the `<video>` element, pipes it through a pitc
 
 ## Contributing
 
-If you want to improve the DSP, UI, or overall structure, feel free to open a pull request.
+If you want to improve the DSP, UI, or overall structure, feel free to open a pull request. 
+
+Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** first. It contains crucial details about the architecture, storage schema, messaging protocol, and hard rules for managing the Web Audio lifecycle cleanly without memory leaks.
 
 ---
 
