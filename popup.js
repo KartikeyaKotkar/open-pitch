@@ -120,7 +120,11 @@ function sendBlockSize(blockSize) {
     });
 }
 
-// Keep UI in sync with storage changes (e.g. resets from content.js)
+// Keep UI in sync with storage changes (e.g. resets from content.js).
+// Fix #5 audit: This listener also fires for changes made by this popup (e.g.
+// handleInput → storage.set). This is safe because setting slider.value
+// programmatically does NOT fire the 'input' event, so no feedback loop or
+// double-send can occur.
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
 
