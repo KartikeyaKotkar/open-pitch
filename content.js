@@ -11,6 +11,16 @@
  * The ScriptProcessorNode reads raw PCM from the source via an
  * AnalyserNode trick (or directly), processes it through SoundTouch,
  * and writes the pitch-shifted samples to the output buffer.
+ *
+ * NOTE (ScriptProcessorNode deprecation):
+ * Chrome logs a deprecation warning for createScriptProcessor(). The modern
+ * replacement is AudioWorkletNode, which requires a separate JS file loaded
+ * via audioCtx.audioWorklet.addModule(url). In a Manifest V3 content script,
+ * there is no clean way to inline the SoundTouch processing into a worklet
+ * without adding a new web_accessible_resources file and porting the entire
+ * SoundTouch library to worklet-compatible code. ScriptProcessorNode remains
+ * functional and is intentionally kept here until AudioWorklet becomes viable
+ * for this use case.
  */
 
 let audioCtx = null;
@@ -20,6 +30,10 @@ let currentVideo = null;
 let soundtouch = null;
 let currentSemitones = 0;
 let currentBlockSize = 4096;
+
+// Fix #4: Track resume listeners so teardown() can remove them to prevent leaks
+let resumeClickHandler = null;
+let resumeKeyHandler = null;
 
 const handleVideoEnded = () => {
     console.log('[OpenPitch] Video ended, resetting and tearing down.');
@@ -82,13 +96,16 @@ function buildChain(video) {
     // Auto-teardown when video ends to ensure fresh context for next video
     video.addEventListener('ended', handleVideoEnded);
 
-    // Resume AudioContext — Chrome requires a user gesture
-    const resume = () => audioCtx?.resume();
-    document.addEventListener('click', resume, { once: true });
-    document.addEventListener('keydown', resume, { once: true });
-    if (!video.paused) audioCtx.resume();
+    // Fix #3 & #4: Capture local ref so the closure cannot resume a stale/null context.
+    // Store handlers so teardown() can remove them if they haven't fired yet.
+    const ctx = audioCtx;
+    resumeClickHandler = () => { if (ctx.state === 'suspended') ctx.resume(); };
+    resumeKeyHandler = () => { if (ctx.state === 'suspended') ctx.resume(); };
+    document.addEventListener('click', resumeClickHandler, { once: true });
+    document.addEventListener('keydown', resumeKeyHandler, { once: true });
+    if (!video.paused) ctx.resume();
 
-    console.log('[OpenPitch] Audio chain built. State:', audioCtx.state);
+    console.log('[OpenPitch] Audio chain built. State:', ctx.state);
 }
 
 // ─── Pitch application ────────────────────────────────────────────────────────
@@ -223,6 +240,9 @@ function cleanupProcessor() {
 
 function teardown() {
     try { currentVideo?.removeEventListener('ended', handleVideoEnded); } catch { }
+    // Fix #4: Remove resume listeners to prevent leaks across rebuilds
+    if (resumeClickHandler) { document.removeEventListener('click', resumeClickHandler); resumeClickHandler = null; }
+    if (resumeKeyHandler) { document.removeEventListener('keydown', resumeKeyHandler); resumeKeyHandler = null; }
     try { sourceNode?.disconnect(); } catch { }
     cleanupProcessor();
     try { audioCtx?.close(); } catch { }
@@ -268,12 +288,12 @@ document.addEventListener('yt-navigate-finish', () => {
     const video = document.querySelector('video');
     if (video && video !== currentVideo) {
         teardown();
+        // Fix #2: Reset storage and reset local state atomically. Do NOT read
+        // storage back afterward — the set() is async and a get() issued
+        // immediately could read stale pre-reset values, causing init() to run
+        // with a non-zero pitch on a fresh video. Since we just reset to 0,
+        // there is nothing to restore; the user will set pitch from the popup.
         chrome.storage.local.set({ pitch: 0, pitchCents: 0, blockSize: 4096, smartProcessing: false });
+        currentBlockSize = 4096;
     }
-
-    chrome.storage.local.get(['pitch', 'blockSize'], ({ pitch, blockSize }) => {
-        const val = (typeof pitch === 'number') ? pitch : 0;
-        if (typeof blockSize === 'number') currentBlockSize = blockSize;
-        if (val !== 0) init(val);
-    });
 });
